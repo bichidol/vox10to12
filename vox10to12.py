@@ -1,12 +1,12 @@
 import sys
 
 def convert_value(field_value):
-    if 0 < field_value < 64:
+    if 0 < field_value < 63:
         field_value = 129 - field_value
     scaled_value = (field_value * 32) / 127
     numerator = round(scaled_value)
     closest_fraction = numerator / 32
-    if 0 < field_value < 64:
+    if 0 < field_value < 63:
         closest_fraction = 1 - closest_fraction
     return closest_fraction
 
