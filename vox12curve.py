@@ -7,33 +7,168 @@ def parse_ticks(tick_string, beats_per_measure):
     total_ticks = (measure - 1) * beats_per_measure * 48 + (beat - 1) * 48 + tick
     return total_ticks
 
-def interpolate(start_point, end_point, interpolation_type, beats_per_measure):
+def parse_line(line):
+    parts = line.split('\t')
+    tick_string = parts[0]
+    value = float(parts[1])
+    extra_values = parts[2:]
+    return tick_string, value, extra_values
+
+def bezier_point(t, p0, p1, p2):
+    return (1 - t)**2 * p0 + 2 * (1 - t) * t * p1 + t**2 * p2
+
+def ease_in_cubic(t):
+    return t**3
+
+def ease_out_cubic(t):
+    return 1 - (1 - t)**3
+
+def ease_in_quint(t):
+    return t**5
+
+def ease_out_quint(t):
+    return 1 - (1 - t)**5
+
+def ease_in_circ(t):
+    return 1 - np.sqrt(1 - t**2)
+
+def ease_out_circ(t):
+    return np.sqrt(1 - (t - 1)**2)
+
+def ease_in_quad(t):
+    return t**2
+
+def ease_out_quad(t):
+    return 1 - (1 - t)**2
+
+def ease_in_quart(t):
+    return t**4
+
+def ease_out_quart(t):
+    return 1 - (1 - t)**4
+
+def ease_in_expo(t):
+    return 2**(10 * (t - 1)) if t > 0 else 0
+
+def ease_out_expo(t):
+    return 1 - 2**(-10 * t)
+
+def ease_in_elastic(t):
+    c4 = (2 * np.pi) / 3
+    return np.power(2, 10 * t - 10) * np.sin((t * 10 - 10.75) * c4) if t > 0 else 0
+
+def ease_out_elastic(t):
+    c4 = (2 * np.pi) / 3
+    return 1 - np.power(2, -10 * t) * np.sin((t * 10 - 0.75) * c4)
+
+def ease_in_back(t):
+    c1 = 1.70158
+    c3 = c1 + 1
+    return c3 * t * t * t - c1 * t * t
+
+def ease_out_back(t):
+    c1 = 1.70158
+    c3 = c1 + 1
+    return 1 + c3 * np.power(t - 1, 3) + c1 * np.power(t - 1, 2)
+
+def ease_in_bounce(t):
+    return 1 - ease_out_bounce(1 - t)
+
+def ease_out_bounce(t):
+    n1 = 7.5625
+    d1 = 2.75
+    if t < 1 / d1:
+        return n1 * t * t
+    elif t < 2 / d1:
+        t -= 1.5 / d1
+        return n1 * t * t + 0.75
+    elif t < 2.5 / d1:
+        t -= 2.25 / d1
+        return n1 * t * t + 0.9375
+    else:
+        t -= 2.625 / d1
+        return n1 * t * t + 0.984375
+    
+def interpolate(start_point, end_point, interpolation_type):
     start_tick, start_val = start_point
     end_tick, end_val = end_point
     interpolated_points = []
     total_ticks = end_tick - start_tick
 
-    for tick in range(start_tick, end_tick + 1, 3):  #64th notes, spaced by 3 ticks
+    for tick in range(start_tick, end_tick + 1, 3):
         ratio = (tick - start_tick) / total_ticks
-        if interpolation_type == 'ease_in':
+        if interpolation_type == 'ease_out_sin':
             value = start_val + (end_val - start_val) * np.sin(ratio * np.pi / 2)
-        elif interpolation_type == 'ease_out':
+        elif interpolation_type == 'ease_in_sin':
             value = start_val + (end_val - start_val) * (1 - np.cos(ratio * np.pi / 2))
         elif interpolation_type == 'sharp':
             value = start_val + (end_val - start_val) * ratio
+        elif interpolation_type == 'ease_in_bezier':
+            control_point = start_val
+            value = bezier_point(ratio, start_val, control_point, end_val)
+        elif interpolation_type == 'ease_in_bezier':
+            control_point = end_val
+            value = bezier_point(ratio, start_val, control_point, end_val)
+        elif interpolation_type == 'ease_in_cubic':
+            value = start_val + (end_val - start_val) * ease_in_cubic(ratio)
+        elif interpolation_type == 'ease_out_cubic':
+            value = start_val + (end_val - start_val) * ease_out_cubic(ratio)
+        elif interpolation_type == 'ease_in_quint':
+            value = start_val + (end_val - start_val) * ease_in_quint(ratio)
+        elif interpolation_type == 'ease_out_quint':
+            value = start_val + (end_val - start_val) * ease_out_quint(ratio)
+        elif interpolation_type == 'ease_in_circ':
+            value = start_val + (end_val - start_val) * ease_in_circ(ratio)
+        elif interpolation_type == 'ease_out_circ':
+            value = start_val + (end_val - start_val) * ease_out_circ(ratio)
+        elif interpolation_type == 'ease_in_quad':
+            value = start_val + (end_val - start_val) * ease_in_quad(ratio)
+        elif interpolation_type == 'ease_out_quad':
+            value = start_val + (end_val - start_val) * ease_out_quad(ratio)
+        elif interpolation_type == 'ease_in_quart':
+            value = start_val + (end_val - start_val) * ease_in_quart(ratio)
+        elif interpolation_type == 'ease_out_quart':
+            value = start_val + (end_val - start_val) * ease_out_quart(ratio)
+        elif interpolation_type == 'ease_in_expo':
+            value = start_val + (end_val - start_val) * ease_in_expo(ratio)
+        elif interpolation_type == 'ease_out_expo':
+            value = start_val + (end_val - start_val) * ease_out_expo(ratio)
+        elif interpolation_type == 'ease_in_elastic':
+            value = start_val + (end_val - start_val) * ease_in_elastic(ratio)
+        elif interpolation_type == 'ease_out_elastic':
+            value = start_val + (end_val - start_val) * ease_out_elastic(ratio)
+        elif interpolation_type == 'ease_in_back':
+            value = start_val + (end_val - start_val) * ease_in_back(ratio)
+        elif interpolation_type == 'ease_out_back':
+            value = start_val + (end_val - start_val) * ease_out_back(ratio)
+        elif interpolation_type == 'ease_in_bounce':
+            value = start_val + (end_val - start_val) * ease_in_bounce(ratio)
+        elif interpolation_type == 'ease_out_bounce':
+            value = start_val + (end_val - start_val) * ease_out_bounce(ratio)
         interpolated_points.append((tick, value))
 
     return interpolated_points
 
-def format_output(interpolated_points, beats_per_measure, extra_values):
+def format_output(interpolated_points, beats_per_measure, first_line_extra_values, second_line_extra_values):
     output_lines = []
-    for tick, value in interpolated_points:
+    last_line_extra_values = second_line_extra_values[:] 
+    
+    for index, (tick, value) in enumerate(interpolated_points):
         measure = tick // (beats_per_measure * 48) + 1
         beat = (tick % (beats_per_measure * 48)) // 48 + 1
         sub_beat = tick % 48
-        extra_values_str = '\t'.join(extra_values).strip()  
+
+        if index == 0:  
+            extra_values_str = '\t'.join(first_line_extra_values).strip()
+        elif index == len(interpolated_points) - 1: 
+            extra_values_str = '\t'.join(last_line_extra_values).strip()
+        else: 
+            adjusted_extra_values = ['0'] + first_line_extra_values[1:]
+            extra_values_str = '\t'.join(adjusted_extra_values).strip()
+
         output_lines.append(f"{measure:03},{beat:02},{sub_beat:02}\t{value:.6f}\t{extra_values_str}\n")
     return ''.join(output_lines)
+
 
 def process_file(file_path, interpolation_type, time_signature):
     beats_per_measure = int(time_signature.split('/')[0])
@@ -41,16 +176,22 @@ def process_file(file_path, interpolation_type, time_signature):
         lines = file.readlines()
 
     points = []
+    extra_values_list = []
     for line in lines:
-        parts = line.split('\t')
-        tick_string = parts[0]
-        value = float(parts[1])
+        tick_string, value, extra_values = parse_line(line)
         total_ticks = parse_ticks(tick_string, beats_per_measure)
         points.append((total_ticks, value))
+        extra_values_list.append(extra_values)
 
-    interpolated_points = interpolate(points[0], points[-1], interpolation_type, beats_per_measure)
+    if len(extra_values_list) < 2:
+        print("Error: Not enough lines for processing.")
+        sys.exit(1)
 
-    output_lines = format_output(interpolated_points, beats_per_measure)
+    first_line_extra_values = extra_values_list[0]
+    second_line_extra_values = extra_values_list[1]
+
+    interpolated_points = interpolate(points[0], points[-1], interpolation_type)
+    output_lines = format_output(interpolated_points, beats_per_measure, first_line_extra_values, second_line_extra_values)
     with open(file_path, 'w') as file:
         file.writelines(output_lines)
 
@@ -63,8 +204,15 @@ if __name__ == "__main__":
     interpolation_type = sys.argv[2].lower()
     time_signature = sys.argv[3]
 
-    if interpolation_type not in ['ease_in', 'ease_out', 'sharp']:
-        print("Error: Interpolation type must be 'ease_in', 'ease_out', or 'sharp'.")
+    if interpolation_type not in [
+        'ease_in_sin', 'ease_out_sin', 'sharp',
+        'ease_in_cubic', 'ease_out_cubic', 'ease_in_quint', 'ease_out_quint',
+        'ease_in_circ', 'ease_out_circ', 'ease_in_quad', 'ease_out_quad',
+        'ease_in_quart', 'ease_out_quart', 'ease_in_expo', 'ease_out_expo',
+        'ease_in_elastic', 'ease_out_elastic', 'ease_in_back', 'ease_out_back',
+        'ease_in_bounce', 'ease_out_bounce'
+    ]:
+        print("Error: Interpolation type not recognized.")
         sys.exit(1)
 
     process_file(input_file, interpolation_type, time_signature)

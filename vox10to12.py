@@ -1,13 +1,20 @@
 import sys
 
 def convert_value(field_value):
-    if 0 < field_value < 63:
+    field_value_original = field_value
+
+    if 0 < field_value_original < 63:
         field_value = 129 - field_value
+
     scaled_value = (field_value * 32) / 127
+
     numerator = round(scaled_value)
+
     closest_fraction = numerator / 32
-    if 0 < field_value < 63:
+
+    if 0 < field_value_original < 63:
         closest_fraction = 1 - closest_fraction
+
     return closest_fraction
 
 def process_file(file_path):
@@ -42,10 +49,7 @@ def process_file(file_path):
             parts = line.split('\t')
             if len(parts) > 1 and parts[1].replace('.', '', 1).isdigit():
                 field_value = int(parts[1])
-                if format_version == 10:
-                    parts[1] = f"{convert_value(field_value):.6f}"
-                else:
-                    pass
+                parts[1] = f"{convert_value(field_value):.6f}"
 
                 parts.insert(-1, '0')
                 parts[-1] = parts[-1].strip()
