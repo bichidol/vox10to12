@@ -50,9 +50,9 @@ def process_file(file_path):
             if len(parts) > 1 and parts[1].replace('.', '', 1).isdigit():
                 field_value = int(parts[1])
                 parts[1] = f"{convert_value(field_value):.6f}"
-
-                parts.insert(-1, '0')
+                print(parts)
                 parts[-1] = parts[-1].strip()
+                parts.append('0')
                 parts.append('0\n')
                 line = '\t'.join(parts)
 
