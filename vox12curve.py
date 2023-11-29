@@ -232,7 +232,21 @@ def process_file(file_path, interpolation_type, time_signature):
         dydx = float(extra_values[7]) if len(extra_values) > 7 else None
         points.append((total_ticks, value, dydx))
 
-        extra_values_list.append(extra_values[:7])
+        if interpolation_type == 'cubic_hermite':
+            adjusted_index_6_value = '2'
+        elif interpolation_type == 'sharp':
+            adjusted_index_6_value = '3'
+        elif interpolation_type == 'ease_out_sin':
+            adjusted_index_6_value = '4'
+        elif interpolation_type == 'ease_in_sin':
+            adjusted_index_6_value = '5'
+        else:
+            adjusted_index_6_value = '1'
+
+        #put wrongindex number lol
+        adjusted_extra_values = extra_values[:5] + [adjusted_index_6_value] + extra_values[6:]
+
+        extra_values_list.append(adjusted_extra_values[:7])
 
     if len(points) < 2:
         print("Error: Not enough lines for processing.")
