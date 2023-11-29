@@ -232,7 +232,7 @@ def process_file(file_path, interpolation_type, time_signature):
         dydx = float(extra_values[7]) if len(extra_values) > 7 else None
         points.append((total_ticks, value, dydx))
 
-        extra_values_list.append(extra_values[:6])
+        extra_values_list.append(extra_values[:7])
 
     if len(points) < 2:
         print("Error: Not enough lines for processing.")
