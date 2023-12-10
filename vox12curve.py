@@ -3,9 +3,9 @@ import re
 import sys
 from scipy.interpolate import CubicSpline, CubicHermiteSpline
 
-def parse_ticks(tick_string, beats_per_measure):
+def parse_ticks(tick_string, beats_per_measure, ticks_per_beat):
     measure, beat, tick = map(int, re.findall(r'\d+', tick_string))
-    total_ticks = (measure - 1) * beats_per_measure * 48 + (beat - 1) * 48 + tick
+    total_ticks = (measure - 1) * beats_per_measure * ticks_per_beat + (beat - 1) * ticks_per_beat + tick
     return total_ticks
 
 def parse_line(line):
@@ -91,7 +91,6 @@ def ease_out_bounce(t):
         return n1 * t * t + 0.984375
     
 def interpolate(points, interpolation_type):
-    print(points)
     interpolated_points = []
 
     if interpolation_type == 'cubic_spline':
@@ -196,29 +195,12 @@ def interpolate(points, interpolation_type):
 
     return interpolated_points
 
-def format_output(interpolated_points, beats_per_measure, first_line_extra_values, second_line_extra_values):
-    output_lines = []
-    last_line_extra_values = second_line_extra_values[:] 
-    
-    for index, (tick, value) in enumerate(interpolated_points):
-        measure = tick // (beats_per_measure * 48) + 1
-        beat = (tick % (beats_per_measure * 48)) // 48 + 1
-        sub_beat = tick % 48
-
-        if index == 0:  
-            extra_values_str = '\t'.join(first_line_extra_values).strip()
-        elif index == len(interpolated_points) - 1: 
-            extra_values_str = '\t'.join(last_line_extra_values).strip()
-        else: 
-            adjusted_extra_values = ['0'] + first_line_extra_values[1:]
-            extra_values_str = '\t'.join(adjusted_extra_values).strip()
-
-        output_lines.append(f"{measure:03},{beat:02},{sub_beat:02}\t{value:.6f}\t{extra_values_str}\n")
-    return ''.join(output_lines)
-
-
 def process_file(file_path, interpolation_type, time_signature):
-    beats_per_measure = int(time_signature.split('/')[0])
+    beats_per_measure, denominator = map(int, time_signature.split('/'))
+    ticks_per_beat = int((4 / denominator) * 48)
+
+    ticks_per_measure = beats_per_measure * ticks_per_beat
+
     with open(file_path, 'r') as file:
         lines = file.readlines()
 
@@ -226,8 +208,7 @@ def process_file(file_path, interpolation_type, time_signature):
     extra_values_list = []
     for line in lines:
         tick_string, value, extra_values = parse_line(line)
-        print(extra_values)
-        total_ticks = parse_ticks(tick_string, beats_per_measure)
+        total_ticks = parse_ticks(tick_string, beats_per_measure, ticks_per_beat)
 
         dydx = float(extra_values[7]) if len(extra_values) > 7 else None
         points.append((total_ticks, value, dydx))
@@ -255,12 +236,11 @@ def process_file(file_path, interpolation_type, time_signature):
     interpolated_points = interpolate(points, interpolation_type)
 
     output_lines = []
-    ticks_per_measure = beats_per_measure * 48
 
     for index, (tick, value) in enumerate(interpolated_points):
         measure = tick // ticks_per_measure + 1
-        beat = (tick % ticks_per_measure) // 48 + 1
-        sub_beat = tick % 48
+        beat = (tick % ticks_per_measure) // ticks_per_beat + 1
+        sub_beat = tick % ticks_per_beat
 
         if index == 0:
             extra_values_str = '\t'.join(extra_values_list[0]).strip()
