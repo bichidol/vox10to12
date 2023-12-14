@@ -14,6 +14,7 @@ def interpolate_to_24th_notes(x_values, y_values):
     x_new = range(x_min, x_max + 1, step_size)
     interpolation_func = interp1d(x_values, y_values, kind='cubic', fill_value="extrapolate")
     y_new = interpolation_func(x_new)
+    y_new = [0 if abs(y) < 1e-6 else y for y in y_new]
     return x_new, y_new
 
 def convert_from_ticks(tick, beats_per_measure, ticks_per_beat):
