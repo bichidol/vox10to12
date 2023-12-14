@@ -43,7 +43,7 @@ def main(input_file, time_signature):
     for i, (x, y) in enumerate(zip(x_24th, y_24th)):
         measure, beat, tick = convert_from_ticks(x, beats_per_measure, ticks_per_beat)
         extras = '\t'.join(extra_values[min(i, len(extra_values) - 1)]) 
-        output_line = "{},{:02d},{:02d}\t{:.6f}\t{}".format(measure, beat, tick, y, extras)
+        output_line = "{:03d},{:02d},{:02d}\t{:.6f}\t{}".format(measure, beat, tick, y, extras)
         output_data.append(output_line)
 
     with open('kshcurve.txt', 'w') as out_file:
