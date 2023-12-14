@@ -23,6 +23,28 @@ def convert_from_ticks(tick, beats_per_measure, ticks_per_beat):
     tick_remainder = int(tick % ticks_per_beat)  
     return measure, beat, tick_remainder
 
+def interpolate_data(x_values, y_values, extra_values):
+    segments = []
+    start_index = 0
+    for i in range(1, len(x_values)):
+        if x_values[i] == x_values[i - 1]:
+            segments.append((x_values[start_index:i], y_values[start_index:i], extra_values[start_index:i]))
+            start_index = i
+    segments.append((x_values[start_index:], y_values[start_index:], extra_values[start_index:]))
+    
+    interpolated_data = []
+    for seg_idx, (x_segment, y_segment, extras_segment) in enumerate(segments):
+        x_new, y_new = interpolate_to_24th_notes(x_segment, y_segment)
+        for x_idx, (x, y) in enumerate(zip(x_new, y_new)):
+            if seg_idx == 0 and x_idx == 0: 
+                extras = extra_values[0]
+            else:
+                original_index = next((idx for idx, original_x in enumerate(x_segment) if original_x >= x), 0)
+                extras = extras_segment[min(original_index, len(extras_segment) - 1)]
+            interpolated_data.append((x, y, extras))
+    
+    return interpolated_data
+
 def main(input_file, time_signature):
     numerator, denominator = map(int, time_signature.split('/'))
     beats_per_measure = numerator
@@ -31,9 +53,7 @@ def main(input_file, time_signature):
     with open(input_file, 'r') as file:
         data_lines = file.readlines()
 
-    x_values = []
-    y_values = []
-    extra_values = []
+    x_values, y_values, extra_values = [], [], []
     for line in data_lines:
         parts = line.strip().split('\t')
         measure, beat, tick = map(int, parts[0].split(','))
@@ -43,21 +63,17 @@ def main(input_file, time_signature):
         y_values.append(y)
         extra_values.append(parts[2:]) 
 
-    x_24th, y_24th = interpolate_to_24th_notes(x_values, y_values)
+    interpolated_data = interpolate_data(x_values, y_values, extra_values)
 
     output_data = []
-    for i, (x, y) in enumerate(zip(x_24th, y_24th)):
+    for x, y, extras in interpolated_data:
         measure, beat, tick = convert_from_ticks(x, beats_per_measure, ticks_per_beat)
-        if i == 0 or x == x_values[-1]:
-            extras = '\t'.join(extra_values[x_values.index(x)])
-        else:
-            extras = '\t'.join(extra_values[min(i, len(extra_values) - 1)])
-        output_line = "{:03d},{:02d},{:02d}\t{:.6f}\t{}".format(measure, beat, tick, y, extras)
+        output_line = "{:03d},{:02d},{:02d}\t{:.6f}\t{}".format(measure, beat, tick, y, '\t'.join(extras))
         output_data.append(output_line)
 
     with open('kshcurve.txt', 'w') as out_file:
         out_file.write('\n'.join(output_data))
-        print(f"output written to kshcurve.txt")
+        print("output written to kshcurve.txt")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Interpolate 64th note laser points to 24th notes for ksh format.')
