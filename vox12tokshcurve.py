@@ -4,12 +4,18 @@ from scipy.interpolate import interp1d
 def convert_to_ticks(measure, beat, tick, beats_per_measure, ticks_per_beat):
     return ((measure - 1) * beats_per_measure * ticks_per_beat) + ((beat - 1) * ticks_per_beat) + tick
 
-def interpolate_to_24th_notes(x_values, y_values, ticks_per_beat):
+def interpolate_to_24th_notes(x_values, y_values):
     x_min, x_max = min(x_values), max(x_values)
-    x_new = range(x_min, x_max + 1, 8)
+    step_size = 8  
+
+    if (x_max - x_min) % step_size != 0:
+        step_size = 12  
+
+    x_new = range(x_min, x_max + 1, step_size)
     interpolation_func = interp1d(x_values, y_values, kind='cubic', fill_value="extrapolate")
     y_new = interpolation_func(x_new)
     return x_new, y_new
+
 
 def convert_from_ticks(tick, beats_per_measure, ticks_per_beat):
     measure = tick // (beats_per_measure * ticks_per_beat) + 1
@@ -37,7 +43,7 @@ def main(input_file, time_signature):
         y_values.append(y)
         extra_values.append(parts[2:]) 
 
-    x_24th, y_24th = interpolate_to_24th_notes(x_values, y_values, ticks_per_beat)
+    x_24th, y_24th = interpolate_to_24th_notes(x_values, y_values)
 
     output_data = []
     for i, (x, y) in enumerate(zip(x_24th, y_24th)):
