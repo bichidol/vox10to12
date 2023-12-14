@@ -6,7 +6,7 @@ def convert_to_ticks(measure, beat, tick, beats_per_measure, ticks_per_beat):
 
 def interpolate_to_24th_notes(x_values, y_values, ticks_per_beat):
     x_min, x_max = min(x_values), max(x_values)
-    x_new = range(x_min, x_max + 1, ticks_per_beat // 3)
+    x_new = range(x_min, x_max + 1, 8)
     interpolation_func = interp1d(x_values, y_values, kind='cubic', fill_value="extrapolate")
     y_new = interpolation_func(x_new)
     return x_new, y_new
