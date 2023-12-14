@@ -16,7 +16,6 @@ def interpolate_to_24th_notes(x_values, y_values):
     y_new = interpolation_func(x_new)
     return x_new, y_new
 
-
 def convert_from_ticks(tick, beats_per_measure, ticks_per_beat):
     measure = tick // (beats_per_measure * ticks_per_beat) + 1
     beat = (tick % (beats_per_measure * ticks_per_beat)) // ticks_per_beat + 1
@@ -48,7 +47,10 @@ def main(input_file, time_signature):
     output_data = []
     for i, (x, y) in enumerate(zip(x_24th, y_24th)):
         measure, beat, tick = convert_from_ticks(x, beats_per_measure, ticks_per_beat)
-        extras = '\t'.join(extra_values[min(i, len(extra_values) - 1)]) 
+        if i == 0 or x == x_values[-1]:
+            extras = '\t'.join(extra_values[x_values.index(x)])
+        else:
+            extras = '\t'.join(extra_values[min(i, len(extra_values) - 1)])
         output_line = "{:03d},{:02d},{:02d}\t{:.6f}\t{}".format(measure, beat, tick, y, extras)
         output_data.append(output_line)
 
