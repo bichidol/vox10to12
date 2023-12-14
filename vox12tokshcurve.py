@@ -14,7 +14,7 @@ def interpolate_to_24th_notes(x_values, y_values):
     x_new = range(x_min, x_max + 1, step_size)
     interpolation_func = interp1d(x_values, y_values, kind='cubic', fill_value="extrapolate")
     y_new = interpolation_func(x_new)
-    y_new = [0 if abs(y) < 1e-6 else y for y in y_new]
+    y_new = [0 if abs(y) < 1e-6 else round(y, 6) for y in y_new]
     return x_new, y_new
 
 def convert_from_ticks(tick, beats_per_measure, ticks_per_beat):
@@ -24,24 +24,43 @@ def convert_from_ticks(tick, beats_per_measure, ticks_per_beat):
     return measure, beat, tick_remainder
 
 def interpolate_data(x_values, y_values, extra_values):
+    if len(x_values) > 1 and x_values[0] == x_values[1]:
+        first_line = x_values.pop(0), y_values.pop(0), extra_values.pop(0)
+    else:
+        first_line = None
+
     segments = []
     start_index = 0
     for i in range(1, len(x_values)):
         if x_values[i] == x_values[i - 1]:
-            segments.append((x_values[start_index:i], y_values[start_index:i], extra_values[start_index:i]))
+            if start_index < i - 1:
+                segments.append((x_values[start_index:i], y_values[start_index:i], extra_values[start_index:i]))
             start_index = i
-    segments.append((x_values[start_index:], y_values[start_index:], extra_values[start_index:]))
-    
+
+    if start_index < len(x_values) - 1:
+        segments.append((x_values[start_index:], y_values[start_index:], extra_values[start_index:]))
+
+    if len(x_values) > 1 and x_values[-1] == x_values[-2]:
+        last_line = x_values.pop(), y_values.pop(), extra_values.pop()
+    else:
+        last_line = None
+
     interpolated_data = []
+    if first_line:
+        interpolated_data.append(first_line)
+
     for seg_idx, (x_segment, y_segment, extras_segment) in enumerate(segments):
         x_new, y_new = interpolate_to_24th_notes(x_segment, y_segment)
         for x_idx, (x, y) in enumerate(zip(x_new, y_new)):
-            if seg_idx == 0 and x_idx == 0: 
+            if seg_idx == 0 and x_idx == 0:
                 extras = extra_values[0]
             else:
                 original_index = next((idx for idx, original_x in enumerate(x_segment) if original_x >= x), 0)
                 extras = extras_segment[min(original_index, len(extras_segment) - 1)]
             interpolated_data.append((x, y, extras))
+
+    if last_line:
+        interpolated_data.append(last_line)
     
     return interpolated_data
 
