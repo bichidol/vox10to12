@@ -6,15 +6,15 @@ def convert_to_ticks(measure, beat, tick, beats_per_measure, ticks_per_beat):
 
 def interpolate_to_24th_notes(x_values, y_values):
     x_min, x_max = min(x_values), max(x_values)
-    step_size = 8  
+    step_size = 12
 
     if (x_max - x_min) % step_size != 0:
-        step_size = 12  
+        step_size = 8
 
     x_new = range(x_min, x_max + 1, step_size)
     interpolation_func = interp1d(x_values, y_values, kind='cubic', fill_value="extrapolate")
     y_new = interpolation_func(x_new)
-    y_new = [0 if abs(y) < 1e-6 else round(y, 6) for y in y_new]
+    y_new = [0 if abs(y) < 1e-6 else round(max(0, min(1, y)), 6) for y in y_new]
     return x_new, y_new
 
 def convert_from_ticks(tick, beats_per_measure, ticks_per_beat):
@@ -95,7 +95,7 @@ def main(input_file, time_signature):
         print("output written to kshcurve.txt")
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Interpolate 64th note laser points to 24th notes for ksh format.')
+    parser = argparse.ArgumentParser(description='Interpolate 64th note laser points to 16th notes for ksh format.')
     parser.add_argument('input_file', help='The input file containing the laser points.')
     parser.add_argument('time_signature', help='Time signature in the format of "4/4".')
     args = parser.parse_args()
